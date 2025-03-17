@@ -3,6 +3,7 @@ import { Button, Text, Loader, useAuthenticator } from '@aws-amplify/ui-react';
 import { Amplify } from 'aws-amplify';
 import '@aws-amplify/ui-react/styles.css';
 import { signInWithRedirect } from 'aws-amplify/auth';
+import './AuthWithSAML.css'; // 追加: カスタムCSSファイルのインポート
 
 const samlCognitoDomainName: string = import.meta.env
   .VITE_APP_SAML_COGNITO_DOMAIN_NAME;
@@ -62,28 +63,33 @@ const AuthWithSAML: React.FC<Props> = (props) => {
   });
 
   return (
-    <>
+    <div className="auth-container">
       {loading ? (
-        <div className="grid grid-cols-1 justify-items-center gap-4">
-          <Text className="mt-12 text-center">Loading...</Text>
-          <Loader width="5rem" height="5rem" />
+        <div className="loading-container">
+          <Text className="loading-text">Loading...</Text>
+          <Loader className="loading-spinner" />
         </div>
       ) : !authenticated ? (
-        <div className="grid grid-cols-1 justify-items-center gap-4">
-          <Text className="mt-12 text-center text-3xl">
+        <div className="login-container">
+          <img
+            src="https://assets.soracom.io/icon/logo/soracom-animated-loop.svg"
+            alt="Soracom Logo"
+            className="logo"
+          />
+          <Text className="login-title">
             Generative AI Use Cases on AWS
           </Text>
           <Button
             variation="primary"
             onClick={() => signIn()}
-            className="mt-6 w-60">
+            className="login-button">
             ログイン
           </Button>
         </div>
       ) : (
         <>{props.children}</>
       )}
-    </>
+    </div>
   );
 };
 
