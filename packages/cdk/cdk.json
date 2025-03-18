@@ -51,11 +51,11 @@
       "amazon.nova-canvas-v1:0"
     ],
     "endpointNames": [],
-    "agentEnabled": true,
+    "agentEnabled": false,
     "searchAgentEnabled": false,
     "searchApiKey": "",
     "agents": [],
-    "inlineAgents": true,
+    "inlineAgents": false,
     "flows": [],
     "allowedIpV4AddressRanges": null,
     "allowedIpV6AddressRanges": null,
