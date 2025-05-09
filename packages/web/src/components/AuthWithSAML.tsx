@@ -81,6 +81,11 @@ const AuthWithSAML: React.FC<Props> = (props) => {
         </div>
       ) : !authenticated ? (
         <div className="grid grid-cols-1 justify-items-center gap-4">
+          <img
+            src="https://assets.soracom.io/icon/logo/soracom-animated-loop.svg"
+            alt="Soracom Logo"
+            className="logo"
+          />
           <Text className="mt-12 text-center text-3xl">{t('auth.title')}</Text>
           <Button
             variation="primary"
