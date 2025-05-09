@@ -33,6 +33,7 @@ import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typesc
 import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
 import xmlDoc from 'react-syntax-highlighter/dist/esm/languages/prism/xml-doc';
 import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
+import { useLocation } from 'react-router-dom';
 
 SyntaxHighlighter.registerLanguage('bash', bash);
 SyntaxHighlighter.registerLanguage('c', c);
@@ -64,11 +65,18 @@ type Props = BaseProps & {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const LinkRenderer = (props: any) => {
-  // 現状、S3 からのファイルダウンロード機能は RAG チャットしか利用しない
+  // Currently, the file download function from S3 is only used in RAG chat
   const { downloadDoc, isS3Url, downloading } = useRagFile();
   const isS3 = useMemo(() => {
     return isS3Url(props.href);
   }, [isS3Url, props.href]);
+
+  // For Knowledge Base, we pass s3Type as a parameter
+  // since it may need to reference S3 from a different account
+  const location = useLocation();
+  const isKnowledgeBase = useMemo(() => {
+    return location.pathname.includes('/rag-knowledge-base');
+  }, [location.pathname]);
 
   return (
     <>
@@ -77,7 +85,10 @@ const LinkRenderer = (props: any) => {
           id={props.id}
           onClick={() => {
             if (!downloading) {
-              downloadDoc(props.href);
+              downloadDoc(
+                props.href,
+                isKnowledgeBase ? 'knowledgeBase' : 'default'
+              );
             }
           }}
           className={`cursor-pointer ${downloading ? 'text-gray-400' : ''}`}>
@@ -139,7 +150,7 @@ const Markdown = React.memo(({ className, prefix, children }: Props) => {
                     <span className="flex-auto">{language} </span>
                     <ButtonCopy
                       className="mr-2 justify-end text-gray-400"
-                      text={codeText} // クリップボードにコピーする対象として、SyntaxHighlighter に渡すソースコード部分を指定
+                      text={codeText} // Specify the source code part to be copied to the clipboard as the target, and pass it to SyntaxHighlighter
                     />
                   </div>
                   <SyntaxHighlighter
