@@ -32,6 +32,7 @@ chat:
   show_system_prompt: Show system prompt
   system_prompt: System Prompt
   title: Chat
+  view_prompt_examples: View Prompt Examples
 common:
   cancel: Cancel
   clear: Clear
@@ -330,6 +331,7 @@ diagram:
 drawer:
   ai_services: AI Services
   builder_mode: Builder Mode
+  done: Done
   generative_ai: Generative AI
   tools: Tools
   use_cases: Use Cases
@@ -594,7 +596,7 @@ landing:
       title: Web Content Extraction
     writer:
       description: >-
-        LLMs trained in multiple languages can perform translation. Moreover, not only can they translate, but they can also reflect various specified context information such as casualness and target audience in the translation.
+        A tool for writing assistance, text refinement, and proofreading. You can write efficiently with AI assistance.
       title: Writing
   use_cases_integration:
     blog:
@@ -614,6 +616,7 @@ language:
   fr: French
   ja: Japanese
   ko: Korean
+  th: Thai
   zh: Chinese
 model:
   parameters:
@@ -693,7 +696,6 @@ rag:
   retrieving: Retrieving reference documents from Kendra...
   title: RAG Chat
 setting:
-  ai: Generative AI
   ai_items:
     agent_name: Agent Name
     image_gen_model: Image Generation Model Name
@@ -701,27 +703,31 @@ setting:
     model_region: LLM & Image Generation Model Region
     video_gen_model: Video Generation Model Name
   config_message: >-
-    Settings can be changed using <0>AWS CDK</0>, not on this screen. If you
+    System settings can be changed using <0>AWS CDK</0>, not on this screen. If you
     encounter errors when running use cases, please make sure you have enabled
     the specified models in {{region}}. For details on how to do this, please
     refer to <1>generative-ai-use-cases</1>.
-  general: General
   items:
     agent_enabled: Agent Enabled
     language: Language
     language_help: Change display language
+    login_status: Login status
     rag_enabled: RAG (Amazon Kendra) Enabled
     rag_kb_enabled: RAG (Knowledge Base) Enabled
+    show_tools: Show Tools
+    show_use_case_builder: Show Use Case Builder
+    typing_animation: Typing Animation
     version: Version
     version_help: Referencing the version in package.json of generative-ai-use-cases
   recent_updates: Recent Updates
   signout: Sign Out
-  title: Settings
+  system: System settings
   update:
     message: >-
       Updates are available on GitHub. If you want to use the latest features,
       please pull the main branch of <0>generative-ai-use-cases</0> and
       redeploy.
+  user: User settings
   view_all_updates: View All Updates
 shared:
   contact_admin: Please contact the administrator.
@@ -1190,8 +1196,7 @@ writer:
     yellow: Yellow
   dark: Dark
   description: >-
-    A tool for writing assistance, text refinement, and proofreading. You can
-    write efficiently with AI assistance.
+    A tool for writing assistance, text refinement, and proofreading. You can write efficiently with AI assistance.
   example1: 'For example, you can have the AI continue this paragraph:'
   example2: >-
     You can also check facts in your text. Select the following text and choose

@@ -653,13 +653,20 @@ As of 2025/03, the multimodal models are:
 "anthropic.claude-3-opus-20240229-v1:0",
 "anthropic.claude-3-sonnet-20240229-v1:0",
 "anthropic.claude-3-haiku-20240307-v1:0",
+"us.anthropic.claude-opus-4-20250514-v1:0",
+"us.anthropic.claude-sonnet-4-20250514-v1:0",
+"us.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
 "us.anthropic.claude-3-opus-20240229-v1:0",
 "us.anthropic.claude-3-sonnet-20240229-v1:0",
 "us.anthropic.claude-3-haiku-20240307-v1:0",
+"eu.anthropic.claude-sonnet-4-20250514-v1:0",
+"eu.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "eu.anthropic.claude-3-5-sonnet-20240620-v1:0",
 "eu.anthropic.claude-3-sonnet-20240229-v1:0",
 "eu.anthropic.claude-3-haiku-20240307-v1:0",
+"apac.anthropic.claude-sonnet-4-20250514-v1:0",
+"apac.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "apac.anthropic.claude-3-haiku-20240307-v1:0",
 "apac.anthropic.claude-3-sonnet-20240229-v1:0",
 "apac.anthropic.claude-3-5-sonnet-20240620-v1:0",
@@ -808,6 +815,8 @@ This solution supports the following text generation models:
 "anthropic.claude-3-opus-20240229-v1:0",
 "anthropic.claude-3-sonnet-20240229-v1:0",
 "anthropic.claude-3-haiku-20240307-v1:0",
+"us.anthropic.claude-opus-4-20250514-v1:0",
+"us.anthropic.claude-sonnet-4-20250514-v1:0",
 "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
 "us.anthropic.claude-3-5-haiku-20241022-v1:0",
@@ -815,9 +824,13 @@ This solution supports the following text generation models:
 "us.anthropic.claude-3-opus-20240229-v1:0",
 "us.anthropic.claude-3-sonnet-20240229-v1:0",
 "us.anthropic.claude-3-haiku-20240307-v1:0",
+"eu.anthropic.claude-sonnet-4-20250514-v1:0",
+"eu.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "eu.anthropic.claude-3-5-sonnet-20240620-v1:0",
 "eu.anthropic.claude-3-sonnet-20240229-v1:0",
 "eu.anthropic.claude-3-haiku-20240307-v1:0",
+"apac.anthropic.claude-sonnet-4-20250514-v1:0",
+"apac.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "apac.anthropic.claude-3-haiku-20240307-v1:0",
 "apac.anthropic.claude-3-sonnet-20240229-v1:0",
 "apac.anthropic.claude-3-5-sonnet-20240620-v1:0",
@@ -1768,7 +1781,7 @@ const envs: Record<string, Partial<StackInput>> = {
 ## Using Bedrock from a Different AWS Account
 
 > [!NOTE]
-> Agent-related tasks (Agent, Flow, Prompt Optimization Tool) do not support using a different AWS account and may result in errors during execution.
+> Flow Chat use case and Prompt Optimization Tool do not support using a different AWS account and may result in errors during execution.
 
 You can use Bedrock from a different AWS account. As a prerequisite, the initial deployment of GenU must be completed.
 
@@ -1827,11 +1840,13 @@ For details on how to specify Principals, refer to: [AWS JSON Policy Elements: P
       "Sid": "AllowBedrockInvokeModel",
       "Effect": "Allow",
       "Action": [
-        "bedrock:InvokeModel*",
+        "bedrock:Invoke*",
         "bedrock:Rerank",
         "bedrock:GetInferenceProfile",
         "bedrock:GetAsyncInvoke",
-        "bedrock:ListAsyncInvokes"
+        "bedrock:ListAsyncInvokes",
+        "bedrock:GetAgent*",
+        "bedrock:ListAgent*"
       ],
       "Resource": ["*"]
     },
@@ -1871,6 +1886,13 @@ When using Knowledge Base, you'll need to include these additional parameters:
 - `ragKnowledgeBaseId` ... Knowledge Base ID created in advance in the different account
   - Knowledge Base must exist in the `modelRegion`
 
+When using Agent Chat use case, you'll need to include these additional parameters:
+
+- `agents` ... a list of Bedrock Agent configurations, which has following properties:
+  - `displayName` ... Display name of the agent
+  - `agentId` ... Agent ID created in advance in the different account
+  - `aliasId` ... Agent Alias ID created in advance in the different account
+
 **Edit [parameter.ts](/packages/cdk/parameter.ts)**
 
 ```typescript
@@ -1879,8 +1901,17 @@ const envs: Record<string, Partial<StackInput>> = {
   dev: {
     crossAccountBedrockRoleArn:
       'arn:aws:iam::AccountID:role/PreCreatedRoleName',
-    ragKnowledgeBaseEnabled: true, // Only when using Knowledge Base
-    ragKnowledgeBaseId: 'XXXXXXXXXX', // Only when using Knowledge Base
+    // Only when using Knowledge Base
+    ragKnowledgeBaseEnabled: true,
+    ragKnowledgeBaseId: 'YOUR_KNOWLEDGE_BASE_ID',
+    // Only when using agents
+    agents: [
+      {
+        displayName: 'YOUR AGENT NAME',
+        agentId: 'YOUR_AGENT_ID',
+        aliasId: 'YOUR_AGENT_ALIAS_ID',
+      },
+    ],
   },
 };
 ```
@@ -1892,8 +1923,17 @@ const envs: Record<string, Partial<StackInput>> = {
 {
   "context": {
     "crossAccountBedrockRoleArn": "arn:aws:iam::AccountID:role/PreCreatedRoleName",
-    "ragKnowledgeBaseEnabled": true, // Only when using Knowledge Base
-    "ragKnowledgeBaseId": "XXXXXXXXXX" // Only when using Knowledge Base
+    // Only when using Knowledge Base
+    "ragKnowledgeBaseEnabled": true,
+    "ragKnowledgeBaseId": "YOUR_KNOWLEDGE_BASE_ID",
+    // Only when using agents
+    "agents": [
+      {
+        "displayName": "YOUR AGENT NAME",
+        "agentId": "YOUR_AGENT_ID",
+        "aliasId": "YOUR_AGENT_ALIAS_ID"
+      }
+    ]
   }
 }
 ```
