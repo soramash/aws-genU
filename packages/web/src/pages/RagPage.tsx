@@ -36,10 +36,11 @@ const RagPage: React.FC = () => {
   const { t } = useTranslation();
   const { content, setContent } = useRagPageState();
   const { pathname, search } = useLocation();
-  const { getModelId, setModelId } = useChat(pathname);
-  const { postMessage, clear, loading, messages, isEmpty } = useRag(pathname);
+  const { getModelId, setModelId, forceToStop } = useChat(pathname);
+  const { postMessage, clear, loading, writing, messages, isEmpty } =
+    useRag(pathname);
   const { scrollableContainer, setFollowing } = useFollow();
-  const { modelIds: availableModels } = MODELS;
+  const { modelIds: availableModels, modelDisplayName } = MODELS;
   const modelId = getModelId();
 
   useEffect(() => {
@@ -69,6 +70,10 @@ const RagPage: React.FC = () => {
     setContent('');
   }, [clear, setContent]);
 
+  const onStop = useCallback(() => {
+    forceToStop();
+  }, [forceToStop]);
+
   return (
     <>
       <div className={`${!isEmpty ? 'screen:pb-36' : ''} relative`}>
@@ -81,7 +86,7 @@ const RagPage: React.FC = () => {
             value={modelId}
             onChange={setModelId}
             options={availableModels.map((m) => {
-              return { value: m, label: m };
+              return { value: m, label: modelDisplayName(m) };
             })}
           />
         </div>
@@ -116,12 +121,17 @@ const RagPage: React.FC = () => {
         <div className="fixed bottom-0 z-0 flex w-full items-end justify-center lg:pr-64 print:hidden">
           <InputChatContent
             content={content}
-            disabled={loading}
+            disabled={loading && !writing}
             onChangeContent={setContent}
             onSend={() => {
-              onSend();
+              if (!loading) {
+                onSend();
+              } else {
+                onStop();
+              }
             }}
             onReset={onReset}
+            canStop={writing}
           />
         </div>
       </div>

@@ -84,7 +84,7 @@ npm run cdk:deploy
 const envs: Record<string, Partial<StackInput>> = {
   dev: {
     ragEnabled: true,
-    kendraIndexLanguage: 'jp',
+    kendraIndexLanguage: 'ja',
   },
 };
 ```
@@ -96,7 +96,7 @@ const envs: Record<string, Partial<StackInput>> = {
 {
   "context": {
     "ragEnabled": true,
-    "kendraIndexLanguage": "jp"
+    "kendraIndexLanguage": "ja"
   }
 }
 ```
@@ -577,6 +577,60 @@ const envs: Record<string, Partial<StackInput>> = {
 }
 ```
 
+### MCP チャットユースケースの有効化
+
+[MCP (Model Context Protocol)](https://modelcontextprotocol.io/introduction) とは、LLM モデルと外部データやツールを繋ぐプロトコルです。
+GenU では [Strands Agents](https://strandsagents.com/latest/) を活用して MCP に準拠したツールを実行するチャットユースケースを用意しています。
+MCP チャットユースケースを有効化するためには、`docker` コマンドが実行可能である必要があります。
+
+**[parameter.ts](/packages/cdk/parameter.ts) を編集**
+
+```
+const envs: Record<string, Partial<StackInput>> = {
+  dev: {
+    mcpEnabled: true,
+  },
+};
+```
+
+**[packages/cdk/cdk.json](/packages/cdk/cdk.json) を編集**
+
+```json
+// cdk.json
+{
+  "context": {
+    "mcpEnabled": true
+  }
+}
+```
+
+利用する MCP サーバーは [packages/cdk/mcp-api/mcp.json](/packages/cdk/mcp-api/mcp.json) に定義されております。
+デフォルトで定義されているツール以外のツールを累加する場合は、mcp.json を変更してください。
+
+**ただし、現状 MCP サーバーとその設定には以下の制約があります。**
+
+- MCP サーバーは AWS Lambda で実行されるため、ファイルの書き込みはできません。(`/tmp` 以下に書き込むことは可能ですが、取り出すことができません。)
+- MCP サーバーは `uvx` または `npx` で実行可能である必要があります。
+- MCP クライアントは stdio のみが利用できます。
+- 現状、マルチモーダルのリクエストはサポートされていません。
+- API Key などを動的に取得して環境変数に設定する仕組みはまだ実装されていません。
+- ユーザーが利用する MCP サーバーを選択する仕組みはまだ実装されていません。(現状は mcp.json に定義されたすべてのツールが利用されます。)
+- mcp.json には `command`, `args`, `env` が設定できます。具体例は以下です。
+
+```json
+{
+  "mcpServers": {
+    "SERVER_NAME": {
+      "command": "uvx",
+      "args": ["SERVER_ARG"]
+      "env": {
+        "YOUR_API_KEY": "xxx"
+      }
+    }
+  }
+}
+```
+
 ### Flow チャットユースケースの有効化
 
 Flow チャットユースケースでは、作成済みの Flow を呼び出すことができます。
@@ -668,13 +722,20 @@ const envs: Record<string, Partial<StackInput>> = {
 "anthropic.claude-3-opus-20240229-v1:0",
 "anthropic.claude-3-sonnet-20240229-v1:0",
 "anthropic.claude-3-haiku-20240307-v1:0",
+"us.anthropic.claude-opus-4-20250514-v1:0",
+"us.anthropic.claude-sonnet-4-20250514-v1:0",
+"us.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
 "us.anthropic.claude-3-opus-20240229-v1:0",
 "us.anthropic.claude-3-sonnet-20240229-v1:0",
 "us.anthropic.claude-3-haiku-20240307-v1:0",
+"eu.anthropic.claude-sonnet-4-20250514-v1:0",
+"eu.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "eu.anthropic.claude-3-5-sonnet-20240620-v1:0",
 "eu.anthropic.claude-3-sonnet-20240229-v1:0",
 "eu.anthropic.claude-3-haiku-20240307-v1:0",
+"apac.anthropic.claude-sonnet-4-20250514-v1:0",
+"apac.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "apac.anthropic.claude-3-haiku-20240307-v1:0",
 "apac.anthropic.claude-3-sonnet-20240229-v1:0",
 "apac.anthropic.claude-3-5-sonnet-20240620-v1:0",
@@ -823,6 +884,8 @@ const envs: Record<string, Partial<StackInput>> = {
 "anthropic.claude-3-opus-20240229-v1:0",
 "anthropic.claude-3-sonnet-20240229-v1:0",
 "anthropic.claude-3-haiku-20240307-v1:0",
+"us.anthropic.claude-opus-4-20250514-v1:0",
+"us.anthropic.claude-sonnet-4-20250514-v1:0",
 "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
 "us.anthropic.claude-3-5-haiku-20241022-v1:0",
@@ -830,9 +893,13 @@ const envs: Record<string, Partial<StackInput>> = {
 "us.anthropic.claude-3-opus-20240229-v1:0",
 "us.anthropic.claude-3-sonnet-20240229-v1:0",
 "us.anthropic.claude-3-haiku-20240307-v1:0",
+"eu.anthropic.claude-sonnet-4-20250514-v1:0",
+"eu.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "eu.anthropic.claude-3-5-sonnet-20240620-v1:0",
 "eu.anthropic.claude-3-sonnet-20240229-v1:0",
 "eu.anthropic.claude-3-haiku-20240307-v1:0",
+"apac.anthropic.claude-sonnet-4-20250514-v1:0",
+"apac.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "apac.anthropic.claude-3-haiku-20240307-v1:0",
 "apac.anthropic.claude-3-sonnet-20240229-v1:0",
 "apac.anthropic.claude-3-5-sonnet-20240620-v1:0",
@@ -1775,7 +1842,7 @@ const envs: Record<string, Partial<StackInput>> = {
 ## 別 AWS アカウントの Bedrock を利用したい場合
 
 > [!NOTE]
-> Agent 系のタスク (Agent, Flow, プロンプト最適化ツール) に関しては別 AWS アカウントの利用をサポートしていないため、実行時にエラーになる可能性があります。
+> 「Flow チャットユースケース」および「プロンプト最適化ツール」は別 AWS アカウントの利用をサポートしていないため、実行時にエラーになる可能性があります。
 
 別 AWS アカウントの Bedrock を利用することができます。前提条件として、GenU の初回デプロイは完了済みとします。
 
@@ -1834,11 +1901,13 @@ Principal の指定方法について詳細を確認したい場合はこちら�
       "Sid": "AllowBedrockInvokeModel",
       "Effect": "Allow",
       "Action": [
-        "bedrock:InvokeModel*",
+        "bedrock:Invoke*",
         "bedrock:Rerank",
         "bedrock:GetInferenceProfile",
         "bedrock:GetAsyncInvoke",
-        "bedrock:ListAsyncInvokes"
+        "bedrock:ListAsyncInvokes",
+        "bedrock:GetAgent*",
+        "bedrock:ListAgent*"
       ],
       "Resource": ["*"]
     },
@@ -1878,6 +1947,13 @@ Knowledge Base を利用する場合は、下記パラメーターも指定し�
 - `ragKnowledgeBaseId` ... 別アカウントに事前構築した Knowledge Base の ID です
   - Knowledge Base は `modelRegion` に存在する必要があります
 
+Agent Chat ユースケースを使用する場合、下記パラメーターも指定します。
+
+- `agents` ... 以下の属性を持つ Bedrock Agent の設定のリストです
+  - `displayName` ... エージェントの表示名
+  - `agentId` ... 別アカウントに事前構築したエージェントの ID
+  - `aliasId` ... 別アカウントに事前構築したエージェントのエイリアス ID
+
 **[parameter.ts](/packages/cdk/parameter.ts) を編集**
 
 ```typescript
@@ -1886,8 +1962,17 @@ const envs: Record<string, Partial<StackInput>> = {
   dev: {
     crossAccountBedrockRoleArn:
       'arn:aws:iam::アカウントID:role/事前に作成したロール名',
-    ragKnowledgeBaseEnabled: true, // Knowledge Base を利用する場合のみ
-    ragKnowledgeBaseId: 'XXXXXXXXXX', // Knowledge Base を利用する場合のみ
+    // Knowledge Base を利用する場合のみ
+    ragKnowledgeBaseEnabled: true,
+    ragKnowledgeBaseId: 'YOUR_KNOWLEDGE_BASE_ID',
+    // Bedrock エージェントを利用する場合のみ
+    agents: [
+      {
+        displayName: 'YOUR AGENT NAME',
+        agentId: 'YOUR_AGENT_ID',
+        aliasId: 'YOUR_AGENT_ALIAS_ID',
+      },
+    ],
   },
 };
 ```
@@ -1899,8 +1984,17 @@ const envs: Record<string, Partial<StackInput>> = {
 {
   "context": {
     "crossAccountBedrockRoleArn": "arn:aws:iam::アカウントID:role/事前に作成したロール名",
-    "ragKnowledgeBaseEnabled": true, // Knowledge Base を利用する場合のみ
-    "ragKnowledgeBaseId": "XXXXXXXXXX" // Knowledge Base を利用する場合のみ
+    // Knowledge Base を利用する場合のみ
+    "ragKnowledgeBaseEnabled": true,
+    "ragKnowledgeBaseId": "YOUR_KNOWLEDGE_BASE_ID",
+    // Bedrock エージェントを利用する場合のみ
+    "agents": [
+      {
+        "displayName": "YOUR AGENT NAME",
+        "agentId": "YOUR_AGENT_ID",
+        "aliasId": "YOUR_AGENT_ALIAS_ID"
+      }
+    ]
   }
 }
 ```

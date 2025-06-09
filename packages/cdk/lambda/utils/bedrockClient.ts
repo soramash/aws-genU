@@ -8,15 +8,20 @@ import {
   BedrockAgentRuntimeClientConfig,
 } from '@aws-sdk/client-bedrock-agent-runtime';
 import { S3Client, S3ClientConfig } from '@aws-sdk/client-s3';
+import {
+  BedrockAgentClient,
+  BedrockAgentClientConfig,
+} from '@aws-sdk/client-bedrock-agent';
 
 // Temporary credentials for cross-account access
 const stsClient = new STSClient();
 let temporaryCredentials: Credentials | undefined;
 
 // Store Bedrock clients
-let bedrockRuntimeClient: BedrockRuntimeClient | undefined;
-let bedrockAgentRuntimeClient: BedrockAgentRuntimeClient | undefined;
-let knowledgeBaseS3Client: S3Client | undefined;
+const bedrockRuntimeClient: Record<string, BedrockRuntimeClient> = {};
+const bedrockAgentClient: Record<string, BedrockAgentClient> = {};
+const bedrockAgentRuntimeClient: Record<string, BedrockAgentRuntimeClient> = {};
+const knowledgeBaseS3Client: Record<string, S3Client> = {};
 
 // Function to get temporary credentials from STS
 const assumeRole = async (crossAccountBedrockRoleArn: string) => {
@@ -85,10 +90,29 @@ export const initBedrockRuntimeClient = async (
     });
   }
   // Use Lambda execution role
-  if (!bedrockRuntimeClient) {
-    bedrockRuntimeClient = new BedrockRuntimeClient(config);
+  if (!(config.region in bedrockRuntimeClient)) {
+    bedrockRuntimeClient[config.region] = new BedrockRuntimeClient(config);
   }
-  return bedrockRuntimeClient;
+  return bedrockRuntimeClient[config.region];
+};
+
+export const initBedrockAgentClient = async (
+  config: BedrockAgentClientConfig & { region: string }
+) => {
+  // Use cross-account role
+  if (process.env.CROSS_ACCOUNT_BEDROCK_ROLE_ARN) {
+    return new BedrockAgentClient({
+      ...(await getCrossAccountCredentials(
+        process.env.CROSS_ACCOUNT_BEDROCK_ROLE_ARN
+      )),
+      ...config,
+    });
+  }
+  // Use Lambda execution role
+  if (!(config.region in bedrockAgentClient)) {
+    bedrockAgentClient[config.region] = new BedrockAgentClient(config);
+  }
+  return bedrockAgentClient[config.region];
 };
 
 export const initBedrockAgentRuntimeClient = async (
@@ -104,10 +128,12 @@ export const initBedrockAgentRuntimeClient = async (
     });
   }
   // Use Lambda execution role
-  if (!bedrockAgentRuntimeClient) {
-    bedrockAgentRuntimeClient = new BedrockAgentRuntimeClient(config);
+  if (!(config.region in bedrockAgentRuntimeClient)) {
+    bedrockAgentRuntimeClient[config.region] = new BedrockAgentRuntimeClient(
+      config
+    );
   }
-  return bedrockAgentRuntimeClient;
+  return bedrockAgentRuntimeClient[config.region];
 };
 
 export const initKnowledgeBaseS3Client = async (
@@ -123,8 +149,8 @@ export const initKnowledgeBaseS3Client = async (
     });
   }
   // Use Lambda execution role
-  if (!knowledgeBaseS3Client) {
-    knowledgeBaseS3Client = new S3Client(config);
+  if (!(config.region in knowledgeBaseS3Client)) {
+    knowledgeBaseS3Client[config.region] = new S3Client(config);
   }
-  return knowledgeBaseS3Client;
+  return knowledgeBaseS3Client[config.region];
 };

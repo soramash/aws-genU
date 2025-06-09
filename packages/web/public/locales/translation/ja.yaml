@@ -30,6 +30,7 @@ chat:
   show_system_prompt: システムプロンプトの表示
   system_prompt: システムプロンプト
   title: チャット
+  view_prompt_examples: プロンプト例を見る
 common:
   cancel: キャンセル
   clear: クリア
@@ -301,6 +302,7 @@ diagram:
 drawer:
   ai_services: AI サービス
   builder_mode: ビルダーモード
+  done: 完了
   generative_ai: (生成 AI)
   tools: ツール
   use_cases: ユースケース
@@ -404,6 +406,10 @@ generateText:
   source_info: 文章の元になる情報
   title: 文章生成
 landing:
+  alert:
+    description: >-
+      こちらは SA が内部デモのために利用する環境です。カスタマーにデモをする場合は、原則自分の AWS アカウントにデプロイしたものを利用してください。カスタマーのデータの入力や業務利用をしてはいけません。
+    title: GenU デモ環境について
   demo:
     agent:
       content: ダミーデータで散布図を描いてください。
@@ -425,6 +431,9 @@ landing:
       content: >-
         スマホ広告のデザイン案を出力してください。
         可愛い、おしゃれ、使いやすい、POPカルチャー、親しみやすい、若者向け、音楽、写真、流行のスマホ、背景が街
+    mcp:
+      content: >-
+        Amazon Bedrock のセキュリティについて調べてください。ユーザーの入力はモデルの学習に使われますか？
     rag:
       content: Claude のパラメータを説明し、その設定方法も教えてください。
     summarize:
@@ -472,6 +481,10 @@ landing:
         画像生成 AI は、テキストや画像を元に新しい画像を生成できます。アイデアを即座に可視化することができ、デザイン作業などの効率化を期待できます。こちらの機能では、プロンプトの作成を
         LLM に支援してもらうことができます。
       title: 画像生成
+    mcp_chat:
+      description: >-
+        MCP チャットは  Model Context Protocol (MCP) を通じて、Bedrock の LLM モデルと外部データや外部ツールをシームレスに連携させるチャット機能です。mcp.json を編集することで、自由にツールを追加できます。MCP のエージェントとして Strands Agents を活用しています。
+      title: MCP チャット
     rag_chat:
       description_kb: >-
         RAG (Retrieval Augmented Generation) は、情報の検索と LLM の文章生成を組み合わせる手法のことで、効果的な情報アクセスを実現できます。
@@ -511,8 +524,7 @@ landing:
       title: Web コンテンツ抽出
     writer:
       description: >-
-        多言語で学習した LLM
-        は、翻訳を行うことも可能です。また、ただ翻訳するだけではなく、カジュアルさ・対象層など様々な指定されたコンテキスト情報を翻訳に反映させることが可能です。
+        ライティングの支援、文章の推敲、校閲を行うツールです。AI の支援を得ながら効率的に執筆することができます。
       title: 執筆
   use_cases_integration:
     blog:
@@ -533,7 +545,11 @@ language:
   fr: フランス語
   ja: 日本語
   ko: 韓国語
+  th: タイ語
   zh: 中国語
+mcp_chat:
+  loading_message: MCP サーバーと接続しています。時間がかかる場合があります。そのまま待機してください...
+  title: MCP チャット
 model:
   parameters:
     reasoning: Reasoning
@@ -597,7 +613,6 @@ rag:
   retrieving: Kendra から参考ドキュメントを取得しています...
   title: RAG チャット
 setting:
-  ai: 生成 AI
   ai_items:
     agent_name: Agent 名
     image_gen_model: 画像生成 モデル名
@@ -605,25 +620,29 @@ setting:
     model_region: LLM & 画像生成 モデルリージョン
     video_gen_model: 動画生成 モデル名
   config_message: >-
-    設定の変更はこの画面ではなく <0>AWS CDK</0> で行います。 また、ユースケース実行時にエラーになる場合は、必ず {{region}}
+    システム設定の変更はこの画面ではなく <0>AWS CDK</0> で行います。 また、ユースケース実行時にエラーになる場合は、必ず {{region}}
     にて指定したモデルを有効化しているか確認してください。それぞれのやり方については <1>generative-ai-use-cases</1>
     をご参照ください。
-  general: 全般
   items:
     agent_enabled: Agent 有効
     language: 言語設定
     language_help: 表示言語を変更できます
+    login_status: ログイン状態
     rag_enabled: RAG (Amazon Kendra) 有効
     rag_kb_enabled: RAG (Knowledge Base) 有効
+    show_tools: ツールの表示
+    show_use_case_builder: ユースケースビルダーの表示
+    typing_animation: タイピングアニメーション
     version: バージョン
     version_help: generative-ai-use-cases の package.json の version を参照しています
   recent_updates: 最近のアップデート
   signout: サインアウト
-  title: 設定情報
+  system: システム設定
   update:
     message: >-
       GitHub にアップデートがあります。最新の機能を利用したい場合は <0>generative-ai-use-cases</0> の
       main ブランチを pull して再度デプロイしてください。
+  user: ユーザー設定
   view_all_updates: 全てのアップデートを見る
 shared:
   contact_admin: 管理者に問い合わせてください。

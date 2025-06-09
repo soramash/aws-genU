@@ -12,7 +12,7 @@ import { IFunction, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Table } from 'aws-cdk-lib/aws-dynamodb';
-import { IdentityPool } from '@aws-cdk/aws-cognito-identitypool-alpha';
+import { IdentityPool } from 'aws-cdk-lib/aws-cognito-identitypool';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import {
   BlockPublicAccess,
@@ -27,6 +27,7 @@ import {
   BEDROCK_RERANKING_MODELS,
   BEDROCK_TEXT_MODELS,
 } from '@generative-ai-use-cases/common';
+import { allowS3AccessWithSourceIpCondition } from '../utils/s3-access-policy';
 
 export interface BackendApiProps {
   // Context Params
@@ -40,6 +41,8 @@ export interface BackendApiProps {
   readonly rerankingModelId?: string | null;
   readonly customAgents: Agent[];
   readonly crossAccountBedrockRoleArn?: string | null;
+  readonly allowedIpV4AddressRanges?: string[] | null;
+  readonly allowedIpV6AddressRanges?: string[] | null;
 
   // Resource
   readonly userPool: UserPool;
@@ -107,6 +110,19 @@ export class Api extends Construct {
       !BEDROCK_RERANKING_MODELS.includes(rerankingModelId)
     ) {
       throw new Error(`Unsupported Model Name: ${rerankingModelId}`);
+    }
+
+    // We don't support using the same model ID accross multiple regions
+    const duplicateModelIds = new Set(
+      [...modelIds, ...imageGenerationModelIds, ...videoGenerationModelIds]
+        .map((m) => m.modelId)
+        .filter((item, index, arr) => arr.indexOf(item) !== index)
+    );
+    if (duplicateModelIds.size > 0) {
+      throw new Error(
+        'Duplicate model IDs detected. Using the same model ID multiple times is not supported:\n' +
+          [...duplicateModelIds].map((s) => `- ${s}\n`).join('\n')
+      );
     }
 
     // Agent Map
@@ -380,7 +396,18 @@ export class Api extends Construct {
         BUCKET_NAME: fileBucket.bucketName,
       },
     });
-    fileBucket.grantWrite(getSignedUrlFunction);
+    // Grant S3 write permissions with source IP condition
+    if (getSignedUrlFunction.role) {
+      allowS3AccessWithSourceIpCondition(
+        fileBucket.bucketName,
+        getSignedUrlFunction.role,
+        'write',
+        {
+          ipv4: props.allowedIpV4AddressRanges,
+          ipv6: props.allowedIpV6AddressRanges,
+        }
+      );
+    }
 
     const getFileDownloadSignedUrlFunction = new NodejsFunction(
       this,
@@ -394,7 +421,18 @@ export class Api extends Construct {
         },
       }
     );
-    fileBucket.grantRead(getFileDownloadSignedUrlFunction);
+    // Grant S3 read permissions with source IP condition
+    if (getFileDownloadSignedUrlFunction.role) {
+      allowS3AccessWithSourceIpCondition(
+        fileBucket.bucketName,
+        getFileDownloadSignedUrlFunction.role,
+        'read',
+        {
+          ipv4: props.allowedIpV4AddressRanges,
+          ipv6: props.allowedIpV6AddressRanges,
+        }
+      );
+    }
 
     // If SageMaker Endpoint exists, grant permission
     if (endpointNames.length > 0) {
@@ -493,9 +531,10 @@ export class Api extends Construct {
       timeout: Duration.minutes(15),
       environment: {
         TABLE_NAME: table.tableName,
+        BUCKET_NAME: fileBucket.bucketName,
       },
     });
-    table.grantWriteData(createMessagesFunction);
+    table.grantReadWriteData(createMessagesFunction);
 
     const updateChatTitleFunction = new NodejsFunction(
       this,
@@ -549,7 +588,7 @@ export class Api extends Construct {
         TABLE_NAME: table.tableName,
       },
     });
-    table.grantWriteData(updateFeedbackFunction);
+    table.grantReadWriteData(updateFeedbackFunction);
 
     const getWebTextFunction = new NodejsFunction(this, 'GetWebText', {
       runtime: Runtime.NODEJS_LATEST,
@@ -565,7 +604,7 @@ export class Api extends Construct {
         TABLE_NAME: table.tableName,
       },
     });
-    table.grantWriteData(createShareId);
+    table.grantReadWriteData(createShareId);
 
     const getSharedChat = new NodejsFunction(this, 'GetSharedChat', {
       runtime: Runtime.NODEJS_LATEST,
@@ -925,19 +964,5 @@ export class Api extends Construct {
     this.agentNames = Object.keys(agentMap);
     this.fileBucket = fileBucket;
     this.getFileDownloadSignedUrlFunction = getFileDownloadSignedUrlFunction;
-  }
-
-  // Allow download by specifying bucket name
-  allowDownloadFile(bucketName: string) {
-    this.getFileDownloadSignedUrlFunction.role?.addToPrincipalPolicy(
-      new PolicyStatement({
-        effect: Effect.ALLOW,
-        resources: [
-          `arn:aws:s3:::${bucketName}`,
-          `arn:aws:s3:::${bucketName}/*`,
-        ],
-        actions: ['s3:GetBucket*', 's3:GetObject*', 's3:List*'],
-      })
-    );
   }
 }
