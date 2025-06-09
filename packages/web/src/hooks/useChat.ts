@@ -24,7 +24,7 @@ import { getPrompter } from '../prompts';
 import { findModelByModelId } from './useModel';
 import useFileApi from './useFileApi';
 
-type GenerationMode = 'normal' | 'continue' | 'retry';
+type GenerationMode = 'normal' | 'continue' | 'retry' | 'edit';
 
 const useChatState = create<{
   chats: {
@@ -57,6 +57,21 @@ const useChatState = create<{
   pushMessage: (id: string, role: Role, content: string) => void;
   popMessage: (id: string) => ShownMessage | undefined;
   post: (
+    id: string,
+    content: string,
+    mutateListChat: SWRInfiniteKeyedMutator<ListChatsResponse[]>,
+    ignoreHistory: boolean,
+    preProcessInput: ((message: ShownMessage[]) => ShownMessage[]) | undefined,
+    postProcessOutput: ((message: string) => string) | undefined,
+    sessionId: string | undefined,
+    uploadedFiles: UploadedFileType[] | undefined,
+    extraData: ExtraData[] | undefined,
+    overrideModelType: Model['type'] | undefined,
+    setSessionId: (sessionId: string) => void,
+    base64Cache: Record<string, string> | undefined,
+    overrideModelParameters: AdditionalModelRequestFields | undefined
+  ) => void;
+  edit: (
     id: string,
     content: string,
     mutateListChat: SWRInfiniteKeyedMutator<ListChatsResponse[]>,
@@ -107,6 +122,16 @@ const useChatState = create<{
   ) => Promise<void>;
   getStopReason: (id: string) => string;
   setForcedStop: (id: string, flag: boolean) => void;
+  createChatIfNotExist: (id: string) => Promise<string>;
+  addChunkToAssistantMessage: (
+    id: string,
+    chunk: string,
+    trace?: string,
+    model?: Model
+  ) => void;
+  addMessageIdsToUnrecordedMessages: (id: string) => ToBeRecordedMessage[];
+  replaceMessages: (id: string, messages: RecordedMessage[]) => void;
+  setPredictedTitle: (id: string) => Promise<void>;
 }>((set, get) => {
   const {
     createChat,
@@ -190,6 +215,10 @@ const useChatState = create<{
   };
 
   const setPredictedTitle = async (id: string) => {
+    const currentTitle = get().chats[id].chat?.title;
+    if (currentTitle && currentTitle.length > 0) return;
+
+    // If the title is an empty string, predict the title and set it
     const modelId = getModelId(id);
     const model = findModelByModelId(modelId)!;
     const prompter = getPrompter(modelId);
@@ -204,10 +233,9 @@ const useChatState = create<{
     setTitle(id, title);
   };
 
-  const createChatIfNotExist = async (
-    id: string,
-    chat?: Chat
-  ): Promise<string> => {
+  const createChatIfNotExist = async (id: string): Promise<string> => {
+    const chat = get().chats[id].chat;
+
     if (chat) {
       return chat.chatId;
     }
@@ -327,7 +355,6 @@ const useChatState = create<{
         })
         .filter((data) => {
           if (!data.source.data) {
-            console.log('File cache not found:', data.name);
             return false;
           }
           return true;
@@ -351,6 +378,10 @@ const useChatState = create<{
     });
   };
 
+  const isExactlyCodeBlock = (text: string): boolean => {
+    return /^```\s*(\w*)\s*\n([\s\S]*?)\n```\s*$/.test(text);
+  };
+
   const addChunkToAssistantMessage = (
     id: string,
     chunk: string,
@@ -359,8 +390,15 @@ const useChatState = create<{
   ) => {
     set((state) => {
       const newChats = produce(state.chats, (draft) => {
+        let traceInlineMessage: string | undefined = undefined;
+
+        // If the received trace is a code block, do not display it as an inline message
+        if (trace && !isExactlyCodeBlock(trace.trim())) {
+          traceInlineMessage = trace.trim();
+        }
+
         const oldAssistantMessage = draft[id].messages.pop()!;
-        const newAssistantMessage: UnrecordedMessage = {
+        const newAssistantMessage: ShownMessage = {
           ...oldAssistantMessage,
           role: 'assistant',
           // When a new model is added, the default prompter is Claude's, so the output may be enclosed in <output></output>
@@ -370,6 +408,8 @@ const useChatState = create<{
             ''
           ),
           trace: (oldAssistantMessage.trace || '') + (trace || ''),
+          traceInlineMessage:
+            traceInlineMessage ?? oldAssistantMessage.traceInlineMessage,
           llmType: model?.modelId,
         };
         draft[id].messages.push(newAssistantMessage);
@@ -604,19 +644,33 @@ const useChatState = create<{
 
     setLoading(id, false);
 
-    const chatId = await createChatIfNotExist(id, get().chats[id].chat);
+    const chatId = await createChatIfNotExist(id);
 
-    // If the title is an empty string, predict the title and set it
-    if (get().chats[id].chat?.title === '') {
-      setPredictedTitle(id).then(() => {
-        mutateListChat();
-      });
-    }
+    setPredictedTitle(id).then(() => {
+      mutateListChat();
+    });
 
     const toBeRecordedMessages = addMessageIdsToUnrecordedMessages(id);
 
-    // In the case of continuing to output or retrying, update the last assistant's message
-    if (generationMode === 'continue' || generationMode === 'retry') {
+    // In the case of editting, update the last user's message
+    if (generationMode === 'edit') {
+      const lastUserMessage: ShownMessage =
+        get().chats[id].messages[get().chats[id].messages.length - 2];
+      const updatedUserMessage: ToBeRecordedMessage = {
+        createdDate: lastUserMessage.createdDate!,
+        messageId: lastUserMessage.messageId!,
+        usecase: lastUserMessage.usecase!,
+        ...lastUserMessage,
+      };
+      toBeRecordedMessages.push(updatedUserMessage);
+    }
+
+    // In the case of continuing to output, retrying, or editing, update the last assistant's message
+    if (
+      generationMode === 'continue' ||
+      generationMode === 'retry' ||
+      generationMode == 'edit'
+    ) {
       const lastAssistantMessage: ShownMessage =
         get().chats[id].messages[get().chats[id].messages.length - 1];
       const updatedAssistantMessage: ToBeRecordedMessage = {
@@ -789,6 +843,70 @@ const useChatState = create<{
       );
     },
 
+    edit: async (
+      id: string,
+      content: string,
+      mutateListChat: SWRInfiniteKeyedMutator<ListChatsResponse[]>,
+      ignoreHistory: boolean,
+      preProcessInput:
+        | ((message: ShownMessage[]) => ShownMessage[])
+        | undefined = undefined,
+      postProcessOutput: ((message: string) => string) | undefined = undefined,
+      sessionId: string | undefined = undefined,
+      uploadedFiles: UploadedFileType[] | undefined = undefined,
+      extraData: ExtraData[] | undefined = undefined,
+      overrideModelType: Model['type'] | undefined = undefined,
+      setSessionId: (sessionId: string) => void = () => {},
+      base64Cache: Record<string, string> | undefined = undefined,
+      overrideModelParameters:
+        | AdditionalModelRequestFields
+        | undefined = undefined
+    ) => {
+      set((state) => {
+        const newChats = produce(state.chats, (draft) => {
+          const lastAssistantMessage = draft[id].messages.pop()!;
+          const lastUserMessage = draft[id].messages.pop()!;
+
+          // Clear the assistant message
+          const clearedAssistantMessage: UnrecordedMessage = {
+            ...lastAssistantMessage,
+            content: '',
+            trace: '',
+            extraData: [],
+          };
+
+          // Edit the user message
+          const edittedUserMessage: UnrecordedMessage = {
+            ...lastUserMessage,
+            content,
+          };
+
+          draft[id].messages.push(edittedUserMessage);
+          draft[id].messages.push(clearedAssistantMessage);
+        });
+
+        return {
+          chats: newChats,
+        };
+      });
+
+      await generateMessage(
+        'edit',
+        id,
+        mutateListChat,
+        ignoreHistory,
+        preProcessInput,
+        postProcessOutput,
+        sessionId,
+        uploadedFiles,
+        extraData,
+        overrideModelType,
+        setSessionId,
+        base64Cache,
+        overrideModelParameters
+      );
+    },
+
     continueGeneration: generateMessage,
     retryGeneration: generateMessage,
     sendFeedback: async (id: string, feedbackData: UpdateFeedbackRequest) => {
@@ -802,6 +920,11 @@ const useChatState = create<{
 
     getStopReason: getStopReason,
     setForcedStop,
+    createChatIfNotExist,
+    addChunkToAssistantMessage,
+    addMessageIdsToUnrecordedMessages,
+    replaceMessages,
+    setPredictedTitle,
   };
 });
 
@@ -825,6 +948,7 @@ const useChat = (id: string, chatId?: string) => {
     clear,
     restore,
     post,
+    edit,
     continueGeneration,
     retryGeneration,
     sendFeedback,
@@ -834,6 +958,11 @@ const useChat = (id: string, chatId?: string) => {
     popMessage,
     getStopReason,
     setForcedStop,
+    createChatIfNotExist,
+    addChunkToAssistantMessage,
+    addMessageIdsToUnrecordedMessages,
+    replaceMessages,
+    setPredictedTitle,
   } = useChatState();
   const { data: messagesData, isLoading: isLoadingMessage } =
     useChatApi().listMessages(chatId);
@@ -932,6 +1061,39 @@ const useChat = (id: string, chatId?: string) => {
         overrideModelParameters
       );
     },
+    editChat: (
+      content: string,
+      ignoreHistory: boolean = false,
+      preProcessInput:
+        | ((message: ShownMessage[]) => ShownMessage[])
+        | undefined = undefined,
+      postProcessOutput: ((message: string) => string) | undefined = undefined,
+      sessionId: string | undefined = undefined,
+      uploadedFiles: UploadedFileType[] | undefined = undefined,
+      extraData: ExtraData[] | undefined = undefined,
+      overrideModelType: Model['type'] | undefined = undefined,
+      setSessionId: (sessionId: string) => void = () => {},
+      base64Cache: Record<string, string> | undefined = undefined,
+      overrideModelParameters:
+        | AdditionalModelRequestFields
+        | undefined = undefined
+    ) => {
+      edit(
+        id,
+        content,
+        mutateChatList,
+        ignoreHistory,
+        preProcessInput,
+        postProcessOutput,
+        sessionId,
+        uploadedFiles,
+        extraData,
+        overrideModelType,
+        setSessionId,
+        base64Cache,
+        overrideModelParameters
+      );
+    },
     continueGeneration: (
       ignoreHistory: boolean = false,
       preProcessInput:
@@ -1004,6 +1166,25 @@ const useChat = (id: string, chatId?: string) => {
     },
     forceToStop: () => {
       return setForcedStop(id, true);
+    },
+    createChatIfNotExist: async () => {
+      return createChatIfNotExist(id);
+    },
+    addChunkToAssistantMessage: (
+      chunk: string,
+      trace?: string,
+      model?: Model
+    ) => {
+      addChunkToAssistantMessage(id, chunk, trace, model);
+    },
+    addMessageIdsToUnrecordedMessages: () => {
+      return addMessageIdsToUnrecordedMessages(id);
+    },
+    replaceMessages: (messages: RecordedMessage[]) => {
+      replaceMessages(id, messages);
+    },
+    setPredictedTitle: async () => {
+      await setPredictedTitle(id);
     },
   };
 };
