@@ -50,6 +50,11 @@ GenU provides a variety of standard use cases leveraging generative AI. These us
         <td>LLMs are good at summarizing large amounts of text. Beyond simple summarization, they can also extract necessary information in a conversational format after being given text as context. For example, after reading a contract, you can ask questions like "What are the conditions for XXX?" or "What is the amount for YYY?"</td>
       </tr>
       <tr>
+        <td>Meeting Minutes</td>
+        <td>Automatically generate meeting minutes from audio recordings or real-time transcription. Choose from Transcription, News Paper, or FAQ style with zero prompt engineering required.
+        </td>
+      </tr>
+      <tr>
         <td>Writing</td>
         <td>LLMs can suggest improvements from a more objective perspective, considering not only typos but also the flow and content of the text. You can expect to improve quality by having the LLM objectively check points you might have missed before showing your work to others.</td>
       </tr>
@@ -129,6 +134,7 @@ GenU provides a feature called "Use Case Builder" that allows you to create cust
 Custom use case screens are automatically generated just from prompt templates, so no code changes to GenU itself are required.
 Created use cases can be shared with all users who can log into the application, not just for personal use.
 Use Case Builder can be [disabled](docs/en/DEPLOY_OPTION.md#use-case-builder-configuration) if not needed.
+Use cases can also be exported as .json files and shared with third parties. When sharing use cases, please be careful not to include any confidential information in prompts or usage examples. Use cases shared by third parties can be imported by uploading the .json file from the new use case creation screen.
 For more details about Use Case Builder, please check <a href="https://aws.amazon.com/jp/blogs/news/genu-use-cases-builder/">this blog</a>.
 <br/>
 <br/>

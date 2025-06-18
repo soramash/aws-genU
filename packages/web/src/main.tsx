@@ -11,6 +11,7 @@ import {
 } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Setting from './pages/Setting';
+import StatPage from './pages/StatPage.tsx';
 import ChatPage from './pages/ChatPage';
 import SharedChatPage from './pages/SharedChatPage';
 import SummarizePage from './pages/SummarizePage';
@@ -25,6 +26,7 @@ import GenerateImagePage from './pages/GenerateImagePage';
 import GenerateVideoPage from './pages/GenerateVideoPage';
 import OptimizePromptPage from './pages/OptimizePromptPage';
 import TranscribePage from './pages/TranscribePage';
+import MeetingMinutesPage from './pages/MeetingMinutesPage';
 import AgentChatPage from './pages/AgentChatPage.tsx';
 import FlowChatPage from './pages/FlowChatPage';
 import VoiceChatPage from './pages/VoiceChatPage';
@@ -72,6 +74,10 @@ const routes: RouteObject[] = [
     element: <Setting />,
   },
   {
+    path: '/stats',
+    element: <StatPage />,
+  },
+  {
     path: '/chat',
     element: <ChatPage />,
   },
@@ -93,6 +99,12 @@ const routes: RouteObject[] = [
     ? {
         path: '/summarize',
         element: <SummarizePage />,
+      }
+    : null,
+  enabled('meetingMinutes')
+    ? {
+        path: '/meeting-minutes',
+        element: <MeetingMinutesPage />,
       }
     : null,
   enabled('writer')
