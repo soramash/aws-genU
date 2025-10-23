@@ -1808,7 +1808,7 @@ EventBridge rules are used for scheduling, and Step Functions for process contro
 
 ### How to Set Tags
 
-GenU supports tags for cost management and other purposes. The key name of the tag is automatically set to `GenU` `. Here are examples of how to set them:
+GenU supports tags for cost management and other purposes. By default, the key name of the tag is set to `GenU`, but you can use a custom tag key by specifying `tagKey`. Here are examples of how to set them:
 
 Setting in `cdk.json`:
 
@@ -1816,6 +1816,7 @@ Setting in `cdk.json`:
 // cdk.json
   ...
   "context": {
+    "tagKey": "MyProject",  // Custom tag key (optional, default is "GenU")
     "tagValue": "dev",
     ...
 ```
@@ -1824,6 +1825,7 @@ Setting in `parameter.ts`:
 
 ```typescript
     ...
+    tagKey: "MyProject",   // Custom tag key (optional, default is "GenU")
     tagValue: "dev",
     ...
 ```
