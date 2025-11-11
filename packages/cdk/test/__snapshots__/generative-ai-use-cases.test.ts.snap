@@ -19017,6 +19017,8 @@ exports[`GenerativeAiUseCases matches the snapshot (closed network mode) 6`] = `
               ],
             ],
           },
+          "VITE_APP_BRANDING_LOGO_PATH": "",
+          "VITE_APP_BRANDING_TITLE": "",
           "VITE_APP_COGNITO_IDENTITY_POOL_PROXY_ENDPOINT": {
             "Fn::Join": [
               "",
@@ -39957,6 +39959,8 @@ exports[`GenerativeAiUseCases matches the snapshot 6`] = `
               ],
             ],
           },
+          "VITE_APP_BRANDING_LOGO_PATH": "",
+          "VITE_APP_BRANDING_TITLE": "",
           "VITE_APP_COGNITO_IDENTITY_POOL_PROXY_ENDPOINT": "",
           "VITE_APP_COGNITO_USER_POOL_PROXY_ENDPOINT": "",
           "VITE_APP_ENDPOINT_NAMES": "[]",

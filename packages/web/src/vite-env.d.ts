@@ -39,6 +39,8 @@ interface ImportMetaEnv {
   readonly VITE_APP_AGENT_CORE_AGENT_BUILDER_ENABLED: string;
   readonly VITE_APP_AGENT_CORE_AGENT_BUILDER_RUNTIME: string;
   readonly VITE_APP_AGENT_CORE_EXTERNAL_RUNTIMES: string;
+  readonly VITE_APP_BRANDING_LOGO_PATH: string;
+  readonly VITE_APP_BRANDING_TITLE: string;
   readonly VITE_APP_MCP_SERVERS_CONFIG: string;
 }
 
