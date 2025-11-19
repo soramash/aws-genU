@@ -689,6 +689,8 @@ Enabling `createGenericAgentCoreRuntime` will deploy the default AgentCore Runti
 By default, it is deployed to the `modelRegion`, but you can override this by specifying `agentCoreRegion`.
 
 The default agents available in AgentCore can utilize MCP servers defined in [mcp.json](https://github.com/aws-samples/generative-ai-use-cases/blob/main/packages/cdk/lambda-python/generic-agent-core-runtime/mcp.json).
+This default agent is available in Agent Builder, and users can create any agent from MCPs that administrators have permitted.
+
 The MCP servers defined by default are AWS-related MCP servers and MCP servers related to current time.
 For details, please refer to the documentation [here](https://awslabs.github.io/mcp/).
 When adding MCP servers, please add them to the aforementioned `mcp.json`.
@@ -786,7 +788,11 @@ As of 2025/03, the multimodal models are:
 "anthropic.claude-3-opus-20240229-v1:0",
 "anthropic.claude-3-sonnet-20240229-v1:0",
 "anthropic.claude-3-haiku-20240307-v1:0",
+"global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+"global.anthropic.claude-haiku-4-5-20251001-v1:0"
 "global.anthropic.claude-sonnet-4-20250514-v1:0",
+"us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+"us.anthropic.claude-haiku-4-5-20251001-v1:0"
 "us.anthropic.claude-opus-4-1-20250805-v1:0",
 "us.anthropic.claude-opus-4-20250514-v1:0",
 "us.anthropic.claude-sonnet-4-20250514-v1:0",
@@ -795,6 +801,8 @@ As of 2025/03, the multimodal models are:
 "us.anthropic.claude-3-opus-20240229-v1:0",
 "us.anthropic.claude-3-sonnet-20240229-v1:0",
 "us.anthropic.claude-3-haiku-20240307-v1:0",
+"eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
+"eu.anthropic.claude-haiku-4-5-20251001-v1:0"
 "eu.anthropic.claude-sonnet-4-20250514-v1:0",
 "eu.anthropic.claude-3-7-sonnet-20250219-v1:0",
 "eu.anthropic.claude-3-5-sonnet-20240620-v1:0",
@@ -806,6 +814,8 @@ As of 2025/03, the multimodal models are:
 "apac.anthropic.claude-3-sonnet-20240229-v1:0",
 "apac.anthropic.claude-3-5-sonnet-20240620-v1:0",
 "apac.anthropic.claude-3-5-sonnet-20241022-v2:0",
+"jp.anthropic.claude-sonnet-4-5-20250929-v1:0",
+"jp.anthropic.claude-haiku-4-5-20251001-v1:0"
 "us.meta.llama4-maverick-17b-instruct-v1:0",
 "us.meta.llama4-scout-17b-instruct-v1:0",
 "us.meta.llama3-2-90b-instruct-v1:0",
@@ -952,6 +962,7 @@ This solution supports the following text generation models:
 "anthropic.claude-3-opus-20240229-v1:0",
 "anthropic.claude-3-sonnet-20240229-v1:0",
 "anthropic.claude-3-haiku-20240307-v1:0",
+"global.anthropic.claude-sonnet-4-5-20250929-v1:0",
 "global.anthropic.claude-sonnet-4-20250514-v1:0",
 "us.anthropic.claude-opus-4-1-20250805-v1:0",
 "us.anthropic.claude-opus-4-20250514-v1:0",
@@ -974,7 +985,12 @@ This solution supports the following text generation models:
 "apac.anthropic.claude-3-sonnet-20240229-v1:0",
 "apac.anthropic.claude-3-5-sonnet-20240620-v1:0",
 "apac.anthropic.claude-3-5-sonnet-20241022-v2:0",
+"deepseek.v3-v1:0",
 "us.deepseek.r1-v1:0",
+"qwen.qwen3-235b-a22b-2507-v1:0",
+"qwen.qwen3-32b-v1:0",
+"qwen.qwen3-coder-480b-a35b-v1:0",
+"qwen.qwen3-coder-30b-a3b-v1:0",
 "us.writer.palmyra-x5-v1:0",
 "us.writer.palmyra-x4-v1:0",
 "amazon.titan-text-premier-v1:0",
@@ -1489,6 +1505,38 @@ const envs: Record<string, Partial<StackInput>> = {
 }
 ```
 
+## Branding Customization
+
+You can customize the logo and title displayed on the landing page by creating a branding configuration file.
+
+### Configuration
+
+1. Create `packages/cdk/branding.json` with your custom settings:
+
+```json
+{
+  "logoPath": "your-logo.svg",
+  "title": "Your Custom Title"
+}
+```
+
+2. Place your custom SVG logo file in `packages/web/src/assets/`:
+
+```
+packages/web/src/assets/your-logo.svg
+```
+
+### Parameters
+
+- `logoPath` (optional): Filename of the SVG logo in `packages/web/src/assets/`
+- `title` (optional): Custom title text to display
+
+### Notes
+
+- If `branding.json` doesn't exist, default AWS logo and title are used
+- Only SVG format is supported for custom logos
+- The logo will be displayed at 80x80 pixels (size-20 class)
+
 ## Security-Related Settings
 
 ### Disable Self-Signup
@@ -1794,7 +1842,7 @@ EventBridge rules are used for scheduling, and Step Functions for process contro
 
 ### How to Set Tags
 
-GenU supports tags for cost management and other purposes. The key name of the tag is automatically set to `GenU` `. Here are examples of how to set them:
+GenU supports tags for cost management and other purposes. By default, the key name of the tag is set to `GenU`, but you can use a custom tag key by specifying `tagKey`. Here are examples of how to set them:
 
 Setting in `cdk.json`:
 
@@ -1802,6 +1850,7 @@ Setting in `cdk.json`:
 // cdk.json
   ...
   "context": {
+    "tagKey": "MyProject",  // Custom tag key (optional, default is "GenU")
     "tagValue": "dev",
     ...
 ```
@@ -1810,6 +1859,7 @@ Setting in `parameter.ts`:
 
 ```typescript
     ...
+    tagKey: "MyProject",   // Custom tag key (optional, default is "GenU")
     tagValue: "dev",
     ...
 ```
